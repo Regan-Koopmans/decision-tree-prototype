@@ -1,0 +1,124 @@
+#!/bin/python3
+
+import argparse
+import os.path
+import math
+
+classes = []
+attributes = []
+flags = { 'use_continuous' : False,
+          'use_missing_data' : False,
+          'prune_tree' : False }
+args = {}
+
+# Helper function to print an error message and exit the program.
+
+def fatalError(msg):
+    print("Error! " + msg)
+    os._exit(0)
+
+def extract_array(input):
+    input = input.replace('{','')
+    input = input.replace('}','')
+    array = list(map(lambda x : x.strip(), input.strip().split(",")))
+    return array
+
+def parse_args():
+    global args
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", help="Use only discrete values.",
+                        action="store_true")
+
+    parser.add_argument("-c", help="Use both continuous and discrete values.",
+                        action="store_true")
+
+    parser.add_argument("-md", help="Use only discrete values, permit missing "
+                        + "information.", action="store_true")
+
+    parser.add_argument("-mc", help="Use continuous and discrete values, "
+                        + "permit missing information.", action="store_true")
+
+    parser.add_argument("-pd", help="Use only discreet values, prune decision "
+                        + "tree.", action="store_true")
+
+    parser.add_argument("-pc", help="Use continuous and discrete values, prune"
+                        + " decision tree.", action="store_true")
+
+    parser.add_argument("spec")
+    parser.add_argument("dat")
+    args = parser.parse_args()
+
+    # Set flags
+
+    if args.c or args.mc or args.pc:
+        flags['use_continuous'] = True
+
+    if args.md or args.mc:
+        flags['use_missing_data'] = True
+
+    if args.pd or args.pc:
+        flags['prune_tree'] = True
+
+def parse_spec_file(file_name):
+    print("Parsing " + file_name)
+    global classes
+    if os.path.exists(file_name):
+        file = open(file_name,  "r")
+        read_classname = False;
+        for line in file:
+            line_array = list(map(lambda x : x.strip(), line.strip().split(":")))
+            if not read_classname:
+                classes = line_array[1].split(" ")
+                read_classname = True
+            else:
+                new_attrib = {}
+                new_attrib["name"] = line_array[0]
+                if line_array[1] == 'Real':
+                    new_attrib["Type"] = line_array[1]
+                else :
+                    new_attrib["Type"] = extract_array(line_array[1])
+                attributes.append(new_attrib)
+        file.close()
+    else:
+        fatalError("Specification file not found!")
+
+def parse_data_file(file_name):
+    print("Parsing " + file_name)
+    if os.path.exists(file_name):
+        file = open(file_name,  "r")
+        file.close()
+    else:
+        fatalError("Data file not found!")
+
+def write_output():
+    file = open("data.out", "w")
+    file.write("TODO")
+    file.write("\n")
+    file.close()
+
+# Function to calculate the entropy of a set where
+
+def entropy(num_true, total):
+    return num_true/total * math.log(num_true/total,2)
+
+def entropy_of_set(set_name):
+    pass
+
+# Function that calculates the gain of partitioning a set
+# with criterion test.
+
+def gain(input_set, test):
+    return
+
+# Function that encapsulates the main logic of constructing the decision tree.
+
+def induce():
+    pass
+
+if __name__ == '__main__':
+    parse_args()
+    parse_spec_file(args.spec)
+    parse_data_file(args.dat)
+    write_output()
+    print("Classes : " + str(classes))
+    print("Attributes : " + str(attributes))
