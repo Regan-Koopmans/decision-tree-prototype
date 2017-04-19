@@ -3,25 +3,44 @@
 import argparse
 import os.path
 import math
+import random
+
+# List containing the possible classifications in the system.
 
 classes = []
+
+# List containing the possible entries of a data field in the dataset.
+
 attributes = []
+
+# Dictionary of flags to modify behaviour
+
 flags = { 'use_continuous' : False,
           'use_missing_data' : False,
           'prune_tree' : False }
 args = {}
 
+training_set = []
+testing_set = []
+
 # Helper function to print an error message and exit the program.
 
 def fatalError(msg):
-    print("Error! " + msg)
+    print("Error: " + msg)
     os._exit(0)
+
+# Function that will extract an array from a string with items in
+# "{ item, item, item, ..., item  }"
+# format
 
 def extract_array(input):
     input = input.replace('{','')
     input = input.replace('}','')
     array = list(map(lambda x : x.strip(), input.strip().split(",")))
     return array
+
+# Manages the parsing of command line arguments and populating the
+# correct flags as per those given arguments.
 
 def parse_args():
     global args
@@ -48,7 +67,7 @@ def parse_args():
     parser.add_argument("dat")
     args = parser.parse_args()
 
-    # Set flags
+    # Set program flags for behaviour
 
     if args.c or args.mc or args.pc:
         flags['use_continuous'] = True
@@ -58,6 +77,8 @@ def parse_args():
 
     if args.pd or args.pc:
         flags['prune_tree'] = True
+
+# Populates attributes from the .spec file
 
 def parse_spec_file(file_name):
     print("Parsing " + file_name)
@@ -74,7 +95,10 @@ def parse_spec_file(file_name):
                 new_attrib = {}
                 new_attrib["name"] = line_array[0]
                 if line_array[1] == 'Real':
-                    new_attrib["Type"] = line_array[1]
+                    if flags['use_continuous']:
+                        new_attrib["Type"] = line_array[1]
+                    else:
+                        fatalError("Continuous attribute found. Please run with a flag that permits continuous data.")
                 else :
                     new_attrib["Type"] = extract_array(line_array[1])
                 attributes.append(new_attrib)
@@ -82,13 +106,52 @@ def parse_spec_file(file_name):
     else:
         fatalError("Specification file not found!")
 
+# Adds an entry to the training set from a line in the data file.
+# Checks for correct input, and converts to a real number where appropriate.
+
+def add_entry(line):
+    line = line.strip()
+    line_array = list(map(lambda x : x.strip(), line.split(",")))
+    new_entry = {}
+    for x in range(0,len(attributes)):
+        if line_array[x] == '?':
+            if flags['use_missing_data']:
+                new_entry[attributes[x]['name']] = None;
+            else:
+                fatalError("Missing data encountered. Please run with a flag that permits missing data.")
+        elif attributes[x]['Type'] == 'Real':
+            new_entry[attributes[x]['name']] = int(line_array[x])
+        else:
+            new_entry[attributes[x]['name']] = line_array[x]
+            if line_array[x] not in attributes[x]['Type']:
+                fatalError("Unexpected value \"" + line_array[x] + "\" for field " + attributes[x]['name']
+                           + " in data file. Expected " + str(attributes[x]['Type']))
+    training_set.append(new_entry)
+
 def parse_data_file(file_name):
     print("Parsing " + file_name)
     if os.path.exists(file_name):
         file = open(file_name,  "r")
+        for line in file:
+            add_entry(line)
         file.close()
     else:
         fatalError("Data file not found!")
+
+# Splits training set and testing set 70 / 30
+
+def partition_sets():
+    global training_set
+    global testing_set
+    random.shuffle(training_set)
+    length = len(training_set)
+    testing_set = training_set[:int(0.3*length)]
+    training_set = training_set[int(0.3*length):]
+    print()
+    print("Training set : " + str(training_set))
+    print()
+    print("Testing set : " + str(testing_set))
+    print()
 
 def write_output():
     file = open("data.out", "w")
@@ -119,6 +182,5 @@ if __name__ == '__main__':
     parse_args()
     parse_spec_file(args.spec)
     parse_data_file(args.dat)
+    partition_sets()
     write_output()
-    print("Classes : " + str(classes))
-    print("Attributes : " + str(attributes))
