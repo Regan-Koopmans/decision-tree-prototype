@@ -126,7 +126,9 @@ def add_entry(line):
             if line_array[x] not in attributes[x]['Type']:
                 fatalError("Unexpected value \"" + line_array[x] + "\" for field " + attributes[x]['name']
                            + " in data file. Expected " + str(attributes[x]['Type']))
-    training_set.append(new_entry)
+    	
+        new_entry['class'] = line_array[-1]
+        training_set.append(new_entry)
 
 def parse_data_file(file_name):
     print("Parsing " + file_name)
