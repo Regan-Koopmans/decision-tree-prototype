@@ -149,11 +149,11 @@ def partition_sets():
     length = len(training_set)
     testing_set = training_set[:int(0.3*length)]
     training_set = training_set[int(0.3*length):]
-    print()
-    print("Training set : " + str(training_set))
-    print()
-    print("Testing set : " + str(testing_set))
-    print()
+    #print()
+    #print("Training set : " + str(training_set))
+    #print()
+    #print("Testing set : " + str(testing_set))
+    #print()
 
 def write_output():
     file = open("data.out", "w")
@@ -161,28 +161,77 @@ def write_output():
     file.write("\n")
     file.close()
 
+# Returns a subset of the input set, where all the entries have
+# the value `test_value` for attribute `test_attribute`
+
+def subset(input_set, test_attribute, test_value):
+    new_set = []
+    for entry in input_set:
+       if entry[test_attribute] == test_value:
+           new_set.append(entry)
+    return new_set
+
 # Function to calculate the entropy of a set where
 
 def entropy(num_true, total):
+    if num_true == 0 or total == 0:
+        return -0
     return num_true/total * math.log(num_true/total,2)
 
-def entropy_of_set(set_name):
-    pass
+def entropy_of_set(input_set):
+    if len(input_set) == 0:
+        return 0
+
+    entropy_total = 0
+    class_totals = {}
+
+    # set counters of classes to zero
+    for entry_class in classes:
+        class_totals[entry_class] = 0
+
+    for entry in input_set:
+        for entry_class in classes:
+          if entry['class'] == entry_class:
+             class_totals[entry_class] += 1
+     
+    # calculate the net entropy by summing over the entropy of the classes    
+
+    for entry_class in classes:
+        entropy_total += entropy(class_totals[entry_class], len(input_set))
+    
+    # Negate the sum
+
+    entropy_total = -entropy_total
+
+    return entropy_total
 
 # Function that calculates the gain of partitioning a set
 # with criterion test.
 
-def gain(input_set, test):
+def gain(input_set, test): 
     return
 
 # Function that encapsulates the main logic of constructing the decision tree.
+# Will need to add some recursive component
 
-def induce():
-    pass
+def induce(input_set):
+    set_entropy = entropy_of_set(input_set)
+    
+    # if the set is not homogenous
+
+    if set_entropy < 1:
+        for attribute in attributes:
+            for value in attribute["Type"]:
+                #print("Subset " + attribute["name"] + " : " + value + " = " + str(subset(input_set,attribute["name"], value)))
+                #print()
+                print("Entropy of " + attribute["name"] + " : " + value + " => " + str(entropy_of_set(subset(input_set, attribute["name"],value))))
+
+
 
 if __name__ == '__main__':
     parse_args()
     parse_spec_file(args.spec)
     parse_data_file(args.dat)
     partition_sets()
+    induce(training_set)
     write_output()
