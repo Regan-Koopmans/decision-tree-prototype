@@ -198,18 +198,28 @@ def entropy_of_set(input_set):
 
     for entry_class in classes:
         entropy_total += entropy(class_totals[entry_class], len(input_set))
-    
-    # Negate the sum
 
-    entropy_total = -entropy_total
-
+    entropy_total = abs(entropy_total)
     return entropy_total
+
+def frequency(input_set, attribute, value):
+    count = 0
+    for entry in input_set:
+        if entry[attribute] == value:
+            count += 1
+    return count / len(input_set)
+
+def average_entropy(input_set, attribute):
+    total = 0
+    for value in attribute["Type"]:
+         total += frequency(input_set, attribute["name"], value) * entropy_of_set(subset(input_set, attribute["name"],value))  
+    return total
 
 # Function that calculates the gain of partitioning a set
 # with criterion test.
 
-def gain(input_set, test): 
-    return
+def gain(input_set, attribute): 
+    return entropy_of_set(input_set) - average_entropy(input_set, attribute)
 
 # Function that encapsulates the main logic of constructing the decision tree.
 # Will need to add some recursive component
@@ -221,11 +231,7 @@ def induce(input_set):
 
     if set_entropy < 1:
         for attribute in attributes:
-            for value in attribute["Type"]:
-                #print("Subset " + attribute["name"] + " : " + value + " = " + str(subset(input_set,attribute["name"], value)))
-                #print()
-                print("Entropy of " + attribute["name"] + " : " + value + " => " + str(entropy_of_set(subset(input_set, attribute["name"],value))))
-
+            print("Gain for " + attribute["name"] + " = " + str(gain(input_set, attribute)))
 
 
 if __name__ == '__main__':
