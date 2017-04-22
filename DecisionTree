@@ -127,8 +127,8 @@ def add_entry(line):
                 fatalError("Unexpected value \"" + line_array[x] + "\" for field " + attributes[x]['name']
                            + " in data file. Expected " + str(attributes[x]['Type']))
     	
-        new_entry['class'] = line_array[-1]
-        training_set.append(new_entry)
+    new_entry['class'] = line_array[-1]
+    training_set.append(new_entry)
 
 def parse_data_file(file_name):
     print("Parsing " + file_name)
@@ -149,11 +149,6 @@ def partition_sets():
     length = len(training_set)
     testing_set = training_set[:int(0.3*length)]
     training_set = training_set[int(0.3*length):]
-    #print()
-    #print("Training set : " + str(training_set))
-    #print()
-    #print("Testing set : " + str(testing_set))
-    #print()
 
 def write_output():
     file = open("data.out", "w")
@@ -221,18 +216,63 @@ def average_entropy(input_set, attribute):
 def gain(input_set, attribute): 
     return entropy_of_set(input_set) - average_entropy(input_set, attribute)
 
+
+def split_set(input_set, attribute):
+    set_array = []
+    sets = {}
+    for value in attribute["Type"]:
+        sets[value] = []
+
+    for entry in input_set:
+         sets[entry[attribute["name"]]].append(entry)
+
+    for value in attribute["Type"]:
+        set_array.append(sets[value])
+    return set_array
+
 # Function that encapsulates the main logic of constructing the decision tree.
 # Will need to add some recursive component
 
-def induce(input_set):
+def induce(input_set, splits_performed=None, forbidden_attributes=None):
+    if len(input_set) == 0:
+        print("Length was zero, not dealing with this set")
+        return
+
     set_entropy = entropy_of_set(input_set)
-    
     # if the set is not homogenous
 
-    if set_entropy < 1:
-        for attribute in attributes:
-            print("Gain for " + attribute["name"] + " = " + str(gain(input_set, attribute)))
+    max_gain_attribute = None
+    max_gain = -1
+    forbidden_attributes = [] if forbidden_attributes == None else forbidden_attributes[:]
 
+
+    if set_entropy < 1 and set_entropy > 0:
+        for attribute in attributes:
+            if attribute["name"] not in forbidden_attributes:
+                attribute_gain = gain(input_set, attribute)
+                if attribute_gain > max_gain:
+                    max_gain = attribute_gain
+                    max_gain_attribute = attribute
+            else:
+                 print("Skipping " + attribute["name"])
+        print("Split on " + max_gain_attribute["name"])
+        children_sets = split_set(input_set, max_gain_attribute)
+        forbidden_attributes.append(max_gain_attribute["name"])
+        for child in children_sets:
+            if len(child) > 0:
+                child_splits_performed = [] if splits_performed == None else splits_performed[:]
+                child_splits_performed.append(max_gain_attribute["name"] + " = " + child[0][max_gain_attribute["name"]])
+                induce(child,child_splits_performed, forbidden_attributes)
+    else:
+        if splits_performed != None and len(splits_performed) > 0:
+            print("IF ", end='')
+            for x in range(0,len(splits_performed)):
+                print(splits_performed[x], end='')
+                if x < len(splits_performed) - 1:
+                   print(" AND ", end='')
+            print()
+            print("THEN CLASS = " + input_set[0]["class"])
+            print()
 
 if __name__ == '__main__':
     parse_args()
