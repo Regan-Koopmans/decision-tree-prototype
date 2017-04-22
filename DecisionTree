@@ -19,9 +19,9 @@ flags = { 'use_continuous' : False,
           'use_missing_data' : False,
           'prune_tree' : False }
 args = {}
-
 training_set = []
 testing_set = []
+rules = []
 
 # Helper function to print an error message and exit the program.
 
@@ -111,7 +111,7 @@ def parse_spec_file(file_name):
 
 def add_entry(line):
     line = line.strip()
-    line_array = list(map(lambda x : x.strip(), line.split(",")))
+    line_array = list(map(lambda x : x.strip(), line.split(" ")))
     new_entry = {}
     for x in range(0,len(attributes)):
         if line_array[x] == '?':
@@ -193,7 +193,6 @@ def entropy_of_set(input_set):
 
     for entry_class in classes:
         entropy_total += entropy(class_totals[entry_class], len(input_set))
-
     entropy_total = abs(entropy_total)
     return entropy_total
 
@@ -216,7 +215,6 @@ def average_entropy(input_set, attribute):
 def gain(input_set, attribute): 
     return entropy_of_set(input_set) - average_entropy(input_set, attribute)
 
-
 def split_set(input_set, attribute):
     set_array = []
     sets = {}
@@ -229,6 +227,13 @@ def split_set(input_set, attribute):
     for value in attribute["Type"]:
         set_array.append(sets[value])
     return set_array
+
+def parts_from_splits(splits):
+    parts = {}
+    for entry in splits:
+        line_array = entry.split(" = ")
+        parts[line_array[0]] = line_array[1]
+    return parts
 
 # Function that encapsulates the main logic of constructing the decision tree.
 # Will need to add some recursive component
@@ -245,8 +250,7 @@ def induce(input_set, splits_performed=None, forbidden_attributes=None):
     max_gain = -1
     forbidden_attributes = [] if forbidden_attributes == None else forbidden_attributes[:]
 
-
-    if set_entropy < 1 and set_entropy > 0:
+    if set_entropy != 0.0:
         for attribute in attributes:
             if attribute["name"] not in forbidden_attributes:
                 attribute_gain = gain(input_set, attribute)
@@ -254,8 +258,9 @@ def induce(input_set, splits_performed=None, forbidden_attributes=None):
                     max_gain = attribute_gain
                     max_gain_attribute = attribute
             else:
-                 print("Skipping " + attribute["name"])
-        print("Split on " + max_gain_attribute["name"])
+                pass 
+                #print("Skipping " + attribute["name"])
+        #print("Split on " + max_gain_attribute["name"])
         children_sets = split_set(input_set, max_gain_attribute)
         forbidden_attributes.append(max_gain_attribute["name"])
         for child in children_sets:
@@ -267,12 +272,36 @@ def induce(input_set, splits_performed=None, forbidden_attributes=None):
         if splits_performed != None and len(splits_performed) > 0:
             print("IF ", end='')
             for x in range(0,len(splits_performed)):
-                print(splits_performed[x], end='')
+                print("(" + splits_performed[x] + ")", end='')
                 if x < len(splits_performed) - 1:
                    print(" AND ", end='')
+                rule = {}
+                rule["class"] = input_set[0]["class"]
+                rule["parts"] = parts_from_splits(splits_performed)
+                rules.append(rule)
+            print(" THEN")
+            print("  CLASS IS " + input_set[0]["class"])
             print()
-            print("THEN CLASS = " + input_set[0]["class"])
-            print()
+
+def classify(entry):
+    for rule in rules:
+        passed_rule = True
+        for key in rule["parts"].keys():
+            if entry[key] != rule["parts"][key]:
+                passed_rule = False
+        if passed_rule == True:
+            #print("Classified "  + rule["class"])
+            return rule["class"]
+
+# Function that tests the rules in the rule array against
+# some training set
+
+def test_tree(testing_set):
+    correct_count = 0
+    for entry in testing_set:
+        if classify(entry) == entry["class"]:
+            correct_count += 1
+    print("Got " + str(round(100 *(correct_count / len(testing_set)))) + " % correct.")
 
 if __name__ == '__main__':
     parse_args()
@@ -280,4 +309,8 @@ if __name__ == '__main__':
     parse_data_file(args.dat)
     partition_sets()
     induce(training_set)
+    print("Testing on training")
+    test_tree(training_set)
+    print("Testing on test data set")
+    test_tree(testing_set)
     write_output()
