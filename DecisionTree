@@ -23,6 +23,8 @@ training_set = []
 testing_set = []
 rules = []
 
+output_file = open("dat.out","w")
+
 # Helper function to print an error message and exit the program.
 
 def fatalError(msg):
@@ -150,12 +152,6 @@ def partition_sets():
     testing_set = training_set[:int(0.3*length)]
     training_set = training_set[int(0.3*length):]
 
-def write_output():
-    file = open("data.out", "w")
-    file.write("TODO")
-    file.write("\n")
-    file.close()
-
 # Returns a subset of the input set, where all the entries have
 # the value `test_value` for attribute `test_attribute`
 
@@ -257,10 +253,6 @@ def induce(input_set, splits_performed=None, forbidden_attributes=None):
                 if attribute_gain > max_gain:
                     max_gain = attribute_gain
                     max_gain_attribute = attribute
-            else:
-                pass 
-                #print("Skipping " + attribute["name"])
-        #print("Split on " + max_gain_attribute["name"])
         children_sets = split_set(input_set, max_gain_attribute)
         forbidden_attributes.append(max_gain_attribute["name"])
         for child in children_sets:
@@ -270,18 +262,18 @@ def induce(input_set, splits_performed=None, forbidden_attributes=None):
                 induce(child,child_splits_performed, forbidden_attributes)
     else:
         if splits_performed != None and len(splits_performed) > 0:
-            print("IF ", end='')
+            output_string = "IF "
             for x in range(0,len(splits_performed)):
-                print("(" + splits_performed[x] + ")", end='')
+                output_string += "(" + splits_performed[x] + ")"
                 if x < len(splits_performed) - 1:
-                   print(" AND ", end='')
+                   output_string += " AND "
                 rule = {}
                 rule["class"] = input_set[0]["class"]
                 rule["parts"] = parts_from_splits(splits_performed)
                 rules.append(rule)
-            print(" THEN")
-            print("  CLASS IS " + input_set[0]["class"])
-            print()
+            output_string += " THEN\n"
+            output_string += "  CLASS IS " + input_set[0]["class"] + "\n\n"
+            output_file.write(output_string)
 
 def classify(entry):
     for rule in rules:
@@ -290,7 +282,6 @@ def classify(entry):
             if entry[key] != rule["parts"][key]:
                 passed_rule = False
         if passed_rule == True:
-            #print("Classified "  + rule["class"])
             return rule["class"]
 
 # Function that tests the rules in the rule array against
@@ -308,9 +299,10 @@ if __name__ == '__main__':
     parse_spec_file(args.spec)
     parse_data_file(args.dat)
     partition_sets()
+    print("Inducing...")
     induce(training_set)
     print("Testing on training")
     test_tree(training_set)
     print("Testing on test data set")
     test_tree(testing_set)
-    write_output()
+    output_file.close()
