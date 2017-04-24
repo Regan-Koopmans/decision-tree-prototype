@@ -80,7 +80,6 @@ def parse_args():
 # Populates attributes from the .spec file
 
 def parse_spec_file(file_name):
-    print("Parsing " + file_name)
     global classes
     if os.path.exists(file_name):
         file = open(file_name,  "r")
@@ -129,7 +128,6 @@ def add_entry(line):
     training_set.append(new_entry)
 
 def parse_data_file(file_name):
-    print("Parsing " + file_name)
     if os.path.exists(file_name):
         file = open(file_name,  "r")
         for line in file:
@@ -336,7 +334,7 @@ def classify(entry):
     for rule in rules:
         passed_rule = True
         for key in rule["parts"].keys():
-            if entry[key] != rule["parts"][key]:
+            if entry[key] != rule["parts"][key] or entry[key] == None:
                 passed_rule = False
         if passed_rule == True:
             applied_classes.append(rule["class"])
@@ -352,7 +350,7 @@ def test_tree(testing_set):
     for entry in testing_set:
         if entry["class"] == classify(entry):
             correct_count += 1
-    print("Got " + str(round(100 *(correct_count / len(testing_set)))) + " % correct.")
+    return round(100 *(correct_count / len(testing_set)))
 
 if __name__ == '__main__':
     parse_args()
@@ -360,8 +358,6 @@ if __name__ == '__main__':
     parse_data_file(args.dat)
     partition_sets()
     induce(training_set)
-    print("Testing on training")
-    test_tree(training_set)
-    print("Testing on test data set")
-    test_tree(testing_set)
+    print("Classify on training => " + str(test_tree(training_set)))
+    print("Classify on testing => " + str(test_tree(testing_set)))
     output_file.close()
