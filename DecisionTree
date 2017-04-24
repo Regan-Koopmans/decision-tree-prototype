@@ -22,7 +22,6 @@ args = {}
 training_set = []
 testing_set = []
 rules = []
-
 output_file = open("dat.out","w")
 
 # Helper function to print an error message and exit the program.
@@ -73,10 +72,8 @@ def parse_args():
 
     if args.c or args.mc or args.pc:
         flags['use_continuous'] = True
-
     if args.md or args.mc:
         flags['use_missing_data'] = True
-
     if args.pd or args.pc:
         flags['prune_tree'] = True
 
@@ -127,8 +124,7 @@ def add_entry(line):
             new_entry[attributes[x]['name']] = line_array[x]
             if line_array[x] not in attributes[x]['Type']:
                 fatalError("Unexpected value \"" + line_array[x] + "\" for field " + attributes[x]['name']
-                           + " in data file. Expected " + str(attributes[x]['Type']))
-    	
+                           + " in data file. Expected " + str(attributes[x]['Type']))    	
     new_entry['class'] = line_array[-1]
     training_set.append(new_entry)
 
@@ -172,14 +168,12 @@ def entropy(num_true, total):
 def entropy_of_set(input_set):
     if len(input_set) == 0:
         return 0
-
     entropy_total = 0
     class_totals = {}
 
     # set counters of classes to zero
     for entry_class in classes:
         class_totals[entry_class] = 0
-
     for entry in input_set:
         for entry_class in classes:
           if entry['class'] == entry_class:
@@ -191,6 +185,13 @@ def entropy_of_set(input_set):
         entropy_total += entropy(class_totals[entry_class], len(input_set))
     entropy_total = abs(entropy_total)
     return entropy_total
+
+def probability_of_missing(input_set, attribute):
+    missing_count = 0
+    for entry in input_set:
+        if entry[attribute["name"]] == None:
+           missing_count += 1
+    return missing_count / len(input_set) 
 
 def frequency(input_set, attribute, value):
     count = 0
@@ -209,16 +210,29 @@ def average_entropy(input_set, attribute):
 # with criterion test.
 
 def gain(input_set, attribute): 
-    return entropy_of_set(input_set) - average_entropy(input_set, attribute)
+    return (1-probability_of_missing(input_set, attribute))*(entropy_of_set(input_set) - average_entropy(input_set, attribute))
+
+# Splits an input set into subsets based on value
 
 def split_set(input_set, attribute):
     set_array = []
     sets = {}
+    if attribute == None:
+        return
     for value in attribute["Type"]:
         sets[value] = []
 
+    # For every entry in the set. If the entries attribute is not none,
+    # add it to the set of those attributes, otherwise propogate to all sets.
+
     for entry in input_set:
-         sets[entry[attribute["name"]]].append(entry)
+        if entry[attribute["name"]] != None:
+            sets[entry[attribute["name"]]].append(entry)
+        else:
+            augmented_entry = entry
+            for key in sets.keys():
+                augmented_entry[attribute["name"]] = key
+                sets[key].append(augmented_entry)
 
     for value in attribute["Type"]:
         set_array.append(sets[value])
@@ -231,22 +245,43 @@ def parts_from_splits(splits):
         parts[line_array[0]] = line_array[1]
     return parts
 
+def attribute_value(input_set, attribute):
+    for entry in input_set:
+        if entry[attribute["name"]] != None:
+            return entry[attribute["name"]]
+    return None
+
+# Function that checks whether a set has any difference other than classifications
+
+def induceable(input_set):
+    for attribute in attributes:
+        attribute_value = None
+        for entry in input_set:
+            if attribute_value == None:
+                attribute_value = entry[attribute["name"]]
+            else:
+                if entry[attribute["name"]] != attribute_value:
+                    return True
+    return False
+
 # Function that encapsulates the main logic of constructing the decision tree.
 # Will need to add some recursive component
 
 def induce(input_set, splits_performed=None, forbidden_attributes=None):
     if len(input_set) == 0:
-        print("Length was zero, not dealing with this set")
         return
-
+    
     set_entropy = entropy_of_set(input_set)
     # if the set is not homogenous
 
-    max_gain_attribute = None
+    max_gain_attribute = attributes[0]
     max_gain = -1
     forbidden_attributes = [] if forbidden_attributes == None else forbidden_attributes[:]
 
     if set_entropy != 0.0:
+        if not induceable(input_set):
+            return
+
         for attribute in attributes:
             if attribute["name"] not in forbidden_attributes:
                 attribute_gain = gain(input_set, attribute)
@@ -258,7 +293,7 @@ def induce(input_set, splits_performed=None, forbidden_attributes=None):
         for child in children_sets:
             if len(child) > 0:
                 child_splits_performed = [] if splits_performed == None else splits_performed[:]
-                child_splits_performed.append(max_gain_attribute["name"] + " = " + child[0][max_gain_attribute["name"]])
+                child_splits_performed.append(max_gain_attribute["name"] + " = " + attribute_value(child,max_gain_attribute))
                 induce(child,child_splits_performed, forbidden_attributes)
     else:
         if splits_performed != None and len(splits_performed) > 0:
@@ -275,22 +310,47 @@ def induce(input_set, splits_performed=None, forbidden_attributes=None):
             output_string += "  CLASS IS " + input_set[0]["class"] + "\n\n"
             output_file.write(output_string)
 
+def has_missing_data(entry):
+    for key in entry.keys():
+        if entry[key] == None:
+            return True
+    return False
+
+def max_class(classes):
+    if (len(classes) == 1):
+        return classes[0]
+    max = -1
+    st = set(classes)
+    mx = -1
+    h = None
+    for each in st:
+        temp = classes.count(each)
+        if mx < temp:
+            mx = temp
+            h = each
+    return h 
+
 def classify(entry):
+    entry_has_missing_data = has_missing_data(entry)
+    applied_classes = []
     for rule in rules:
         passed_rule = True
         for key in rule["parts"].keys():
             if entry[key] != rule["parts"][key]:
                 passed_rule = False
         if passed_rule == True:
-            return rule["class"]
+            applied_classes.append(rule["class"])
+    return max_class(applied_classes)
 
 # Function that tests the rules in the rule array against
 # some training set
 
 def test_tree(testing_set):
+    if len(testing_set) == 0:
+       return
     correct_count = 0
     for entry in testing_set:
-        if classify(entry) == entry["class"]:
+        if entry["class"] == classify(entry):
             correct_count += 1
     print("Got " + str(round(100 *(correct_count / len(testing_set)))) + " % correct.")
 
@@ -299,7 +359,6 @@ if __name__ == '__main__':
     parse_spec_file(args.spec)
     parse_data_file(args.dat)
     partition_sets()
-    print("Inducing...")
     induce(training_set)
     print("Testing on training")
     test_tree(training_set)
