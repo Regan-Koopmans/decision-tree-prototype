@@ -4,6 +4,7 @@ import argparse
 import os.path
 import math
 import random
+import copy
 
 # List containing the possible classifications in the system.
 
@@ -353,15 +354,28 @@ def test_tree(testing_set, using_rules=rules):
             correct_count += 1
     return round(100 *(correct_count / len(testing_set)))
 
-def test_information_loss():
-    pass
-
 def prune():
     max_rule_length = -1
+    augmented_rules = []
+    global rules
     for rule in rules:
         rule_length = len(rule["parts"])
         if rule_length > max_rule_length:
-            print(rule["parts"])
+            max_rule_length = rule_length
+    for rule in rules:
+        if len(rule["parts"]) != max_rule_length:
+            augmented_rules.append(rule)
+        else:
+            augmented_rule = copy.deepcopy(rule)
+            augmented_rule["parts"].pop()
+            augmented_rules.append(augmented_rule)
+    test_tree(training_set, augmented_rules)
+    if test_tree(training_set, rules) - test_tree(training_set, augmented_rules) <= 20:
+        print("Old rules : " + str(rules))
+        print("New rules : " + str(augmented_rules))
+        rules = copy.deepcopy(augmented_rules)
+    else:
+        print(test_tree(training_set, rules) - test_tree(training_set, augmented_rules))
 
 if __name__ == '__main__':
     parse_args()
@@ -371,6 +385,7 @@ if __name__ == '__main__':
     induce(training_set)
     if flags["prune_tree"]:
         prune()
+    print("New rules : " + str(rules))
     print("Classify on training => " + str(test_tree(training_set)))
     print("Classify on testing => " + str(test_tree(testing_set)))
     output_file.close()
