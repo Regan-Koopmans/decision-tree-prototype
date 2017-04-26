@@ -345,7 +345,7 @@ def classify(entry, using_rules=rules):
 # Function that tests the rules in the rule array against
 # some training set
 
-def test_tree(testing_set, using_rules=rules):
+def test_tree(testing_set, using_rules):
     if len(testing_set) == 0:
        return
     correct_count = 0
@@ -369,13 +369,11 @@ def prune():
             augmented_rule = copy.deepcopy(rule)
             augmented_rule["parts"].pop()
             augmented_rules.append(augmented_rule)
-    test_tree(training_set, augmented_rules)
-    if test_tree(training_set, rules) - test_tree(training_set, augmented_rules) <= 20:
-        print("Old rules : " + str(rules))
-        print("New rules : " + str(augmented_rules))
+
+    # if the accuracy loss is smaller than 5
+
+    if test_tree(training_set, rules) - test_tree(training_set, augmented_rules) <= 5:
         rules = copy.deepcopy(augmented_rules)
-    else:
-        print(test_tree(training_set, rules) - test_tree(training_set, augmented_rules))
 
 if __name__ == '__main__':
     parse_args()
@@ -385,7 +383,6 @@ if __name__ == '__main__':
     induce(training_set)
     if flags["prune_tree"]:
         prune()
-    print("New rules : " + str(rules))
-    print("Classify on training => " + str(test_tree(training_set)))
-    print("Classify on testing => " + str(test_tree(testing_set)))
+    print("Classify on training => " + str(test_tree(training_set, rules)))
+    print("Classify on testing => " + str(test_tree(testing_set, rules)))
     output_file.close()

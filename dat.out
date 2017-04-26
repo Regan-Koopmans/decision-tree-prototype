@@ -1,12 +1,15 @@
-IF (countryOfOrigin = USA) THEN
-  CLASS IS true
-
-IF (countryOfOrigin = Europe) AND (bigStar = yes) THEN
+IF (genre = Science_Fiction) THEN
   CLASS IS false
 
-IF (countryOfOrigin = Europe) AND (bigStar = no) THEN
+IF (genre = Comedy) AND (bigStar = yes) THEN
   CLASS IS true
 
-IF (countryOfOrigin = Other) THEN
+IF (genre = Comedy) AND (bigStar = no) AND (countryOfOrigin = USA) THEN
+  CLASS IS false
+
+IF (genre = Comedy) AND (bigStar = no) AND (countryOfOrigin = Europe) THEN
+  CLASS IS true
+
+IF (genre = Romance) THEN
   CLASS IS false
 
