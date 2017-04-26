@@ -237,10 +237,10 @@ def split_set(input_set, attribute):
     return set_array
 
 def parts_from_splits(splits):
-    parts = {}
+    parts = []
     for entry in splits:
         line_array = entry.split(" = ")
-        parts[line_array[0]] = line_array[1]
+        parts.append((line_array[0], line_array[1]))
     return parts
 
 def attribute_value(input_set, attribute):
@@ -303,7 +303,8 @@ def induce(input_set, splits_performed=None, forbidden_attributes=None):
                 rule = {}
                 rule["class"] = input_set[0]["class"]
                 rule["parts"] = parts_from_splits(splits_performed)
-                rules.append(rule)
+                if rule not in rules:
+                    rules.append(rule)
             output_string += " THEN\n"
             output_string += "  CLASS IS " + input_set[0]["class"] + "\n\n"
             output_file.write(output_string)
@@ -328,13 +329,13 @@ def max_class(classes):
             h = each
     return h 
 
-def classify(entry):
+def classify(entry, using_rules=rules):
     entry_has_missing_data = has_missing_data(entry)
     applied_classes = []
-    for rule in rules:
+    for rule in using_rules:
         passed_rule = True
-        for key in rule["parts"].keys():
-            if entry[key] != rule["parts"][key] or entry[key] == None:
+        for part in rule["parts"]:
+            if entry[part[0]] != part[1] or entry[part[0]] == None:
                 passed_rule = False
         if passed_rule == True:
             applied_classes.append(rule["class"])
@@ -343,14 +344,24 @@ def classify(entry):
 # Function that tests the rules in the rule array against
 # some training set
 
-def test_tree(testing_set):
+def test_tree(testing_set, using_rules=rules):
     if len(testing_set) == 0:
        return
     correct_count = 0
     for entry in testing_set:
-        if entry["class"] == classify(entry):
+        if entry["class"] == classify(entry, using_rules):
             correct_count += 1
     return round(100 *(correct_count / len(testing_set)))
+
+def test_information_loss():
+    pass
+
+def prune():
+    max_rule_length = -1
+    for rule in rules:
+        rule_length = len(rule["parts"])
+        if rule_length > max_rule_length:
+            print(rule["parts"])
 
 if __name__ == '__main__':
     parse_args()
@@ -358,6 +369,8 @@ if __name__ == '__main__':
     parse_data_file(args.dat)
     partition_sets()
     induce(training_set)
+    if flags["prune_tree"]:
+        prune()
     print("Classify on training => " + str(test_tree(training_set)))
     print("Classify on testing => " + str(test_tree(testing_set)))
     output_file.close()
