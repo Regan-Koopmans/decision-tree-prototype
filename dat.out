@@ -1,15 +1,6 @@
-IF (genre = Science_Fiction) THEN
-  CLASS IS false
-
-IF (genre = Comedy) AND (bigStar = yes) THEN
+IF (imdb > 4.0) THEN
   CLASS IS true
 
-IF (genre = Comedy) AND (bigStar = no) AND (countryOfOrigin = USA) THEN
-  CLASS IS false
-
-IF (genre = Comedy) AND (bigStar = no) AND (countryOfOrigin = Europe) THEN
-  CLASS IS true
-
-IF (genre = Romance) THEN
+IF (imdb < 4.0) THEN
   CLASS IS false
 
