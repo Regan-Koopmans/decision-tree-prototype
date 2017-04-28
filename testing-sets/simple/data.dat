@@ -1,0 +1,10 @@
+USA yes Science_Fiction 9.0 true
+USA no Comedy 3.0 false
+USA yes Comedy 8.0  true
+Europe no Comedy 10.0  true
+Europe yes Science_Fiction 1.0 false
+Europe yes Romance 2.0 false
+Other yes Comedy 2.0 false
+Other no Science_Fiction 3.0 false
+Europe yes Comedy 9.0 true
+USA yes Comedy 8.0 true
