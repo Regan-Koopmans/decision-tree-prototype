@@ -26,7 +26,7 @@ args = {}
 training_set = []
 testing_set = []
 rules = []
-output_file = open("dat.out","w")
+output_file = open("data.out","w")
 
 # Helper function to print an error message and exit the program.
 
@@ -221,13 +221,11 @@ def average_entropy(input_set, attribute):
 # with criterion test.
 
 def gain(input_set, attribute):
-    if len(input_set) == 0:
-        print("gain for empty set!")
     return (1-probability_of_missing(input_set, attribute))*(entropy_of_set(input_set) - average_entropy(input_set, attribute))
 
 # Splits an input set into subsets based on value
 
-def split_set(input_set, attribute, continuous_descriminator):
+def split_set(input_set, attribute, continuous_descriminator, debug):
     set_array = []
     sets = {}
     if attribute == None:
@@ -255,10 +253,9 @@ def split_set(input_set, attribute, continuous_descriminator):
                 greater.append(entry)
             else:
                 less.append(entry)
-        if len(greater) > 0:
-            set_array.append(greater)
-        if len(less) > 0:
-            set_array.append(less)
+
+        set_array.append(greater)
+        set_array.append(less)
     return set_array
 
 def parts_from_splits(splits):
@@ -321,32 +318,25 @@ def populate_cont_attribute_values(input_set):
     return cont_attribute_values
 
 def gain_continuous(input_set, attribute, attribute_values, forbidden_attribute_reals):
-    gain = (None,None)
+    gain = (0,0)
     if attribute_values is None:
         print("Attribute values is NONE!")
         return (0, None)
-
-    #                                         v1 + v2
-    # Calculate information gain for every    ------
-    #                                            2
 
     set_entropy = entropy_of_set(input_set)
 
     max_continuous_gain = -1
     max_continuous_descriminator = -1
 
-    print("Forbidden attribute reals " + str(forbidden_attribute_reals[attribute["name"]]))
-
     for x in range(0, len(attribute_values)-1):
         current_descriminator =(attribute_values[x] + attribute_values[x+1]) / 2
         if current_descriminator not in forbidden_attribute_reals[attribute["name"]]:
-            sets = split_set(input_set, attribute, current_descriminator)
+            sets = split_set(input_set, attribute, current_descriminator, False)
             current_gain = set_entropy - (len(sets[0])/len(input_set) * entropy_of_set(sets[0]) + len(sets[1])/len(input_set) * entropy_of_set(sets[1]))
             if current_gain > max_continuous_gain:
                 max_continuous_gain = current_gain
                 max_continuous_descriminator = current_descriminator
 
-    print("Splitting on " + attribute["name"] + " : " + str(max_continuous_descriminator))
     gain = (max_continuous_gain, max_continuous_descriminator)
     return gain
 
@@ -359,14 +349,15 @@ def induce(input_set, splits_performed, forbidden_attributes, forbidden_attribut
     set_entropy = entropy_of_set(input_set)
     if set_entropy != 0.0:
         if not induceable(input_set, forbidden_attributes):
-            print("Not induceable")
             return
         continuous_attributes = populate_cont_attribute_values(input_set);
         continuous_descriminator = None
-        max_gain_attribute = attributes[0]
+        cont_gain = (None,None)
+        max_gain_attribute = None
         max_gain = -1
-        forbidden_attributes = [] if forbidden_attributes == None else copy.deepcopy(forbidden_attributes)
-        forbidden_attribute_reals = {} if forbidden_attribute_reals == None else copy.deepcopy(forbidden_attribute_reals)
+
+        forbidden_attributes = copy.deepcopy(forbidden_attributes)
+
         for attribute in attributes:
             if attribute["name"] not in forbidden_attributes:
                 if attribute["type"] != "Real":
@@ -374,20 +365,23 @@ def induce(input_set, splits_performed, forbidden_attributes, forbidden_attribut
                 else:
                     if attribute["name"] not in forbidden_attribute_reals:
                         forbidden_attribute_reals[attribute["name"]] = []
-                    cont_gain = gain_continuous(input_set, attribute, continuous_attributes[attribute["name"]], forbidden_attribute_reals)
-                    attribute_gain = cont_gain[0]
-                    continuous_descriminator = cont_gain[1]
+                    if continuous_descriminator not in forbidden_attribute_reals[attribute["name"]]:
+                        cont_gain = gain_continuous(input_set, attribute, continuous_attributes[attribute["name"]], forbidden_attribute_reals)
+                        attribute_gain = cont_gain[0]
 
-                if attribute_gain > max_gain or max_gain == -1:
+                if attribute_gain > max_gain:
                     max_gain = attribute_gain
                     max_gain_attribute = attribute
+                    continuous_descriminator = cont_gain[1]
 
-        children_sets = split_set(input_set, max_gain_attribute, continuous_descriminator)
+        children_sets = split_set(input_set, max_gain_attribute, continuous_descriminator, True)
+
         if (max_gain_attribute["type"] != "Real"):
             forbidden_attributes.append(max_gain_attribute["name"])
         else:
             if forbidden_attribute_reals[max_gain_attribute["name"]] == None:
                 forbidden_attribute_reals[max_gain_attribute["name"]] = []
+
             if continuous_descriminator not in forbidden_attribute_reals[max_gain_attribute["name"]]:
                 forbidden_attribute_reals[max_gain_attribute["name"]].append(continuous_descriminator)
 
@@ -402,6 +396,7 @@ def induce(input_set, splits_performed, forbidden_attributes, forbidden_attribut
                         child_splits_performed.append(max_gain_attribute["name"] + " < " + str(continuous_descriminator))
                     else:
                         child_splits_performed.append(max_gain_attribute["name"] + " > " + str(continuous_descriminator))
+
                 induce(child,child_splits_performed, forbidden_attributes, forbidden_attribute_reals)
     else:
         if splits_performed != None and len(splits_performed) > 0:
@@ -418,6 +413,8 @@ def induce(input_set, splits_performed, forbidden_attributes, forbidden_attribut
             output_string += " THEN\n"
             output_string += "  CLASS IS " + input_set[0]["class"] + "\n\n"
             output_file.write(output_string)
+
+# Helper function to determine whether a given entry has any missing values.
 
 def has_missing_data(entry):
     for key in entry.keys():
@@ -482,7 +479,7 @@ def test_tree(testing_set, using_rules, debug):
             correct_count += 1
         elif debug:
             incorrect_sets[classify(entry, using_rules, False)].append(entry)
-            
+
     return round(100 *(correct_count / len(testing_set)))
 
 def prune():
@@ -512,7 +509,7 @@ if __name__ == '__main__':
     parse_spec_file(args.spec)
     parse_data_file(args.dat)
     partition_sets()
-    induce(training_set, None, None, None)
+    induce(training_set, None, [], {})
     if flags["prune_tree"]:
         prune()
     print("Classify on training => " + str(test_tree(training_set, rules, True)))
