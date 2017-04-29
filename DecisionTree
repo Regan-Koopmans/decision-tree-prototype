@@ -5,9 +5,7 @@ import os.path
 import math
 import random
 import copy
-import pprint
-
-pp = pprint.PrettyPrinter(indent=4)
+import sys
 
 # List containing the possible classifications in the system.
 
@@ -130,13 +128,19 @@ def add_entry(line):
             if line_array[x] not in attributes[x]["type"]:
                 fatalError("Unexpected value \"" + line_array[x] + "\" for field " + attributes[x]['name']
                            + " in data file. Expected " + str(attributes[x]['type']))
+    
     new_entry['class'] = line_array[-1]
     training_set.append(new_entry)
+    return
+
+
 
 def parse_data_file(file_name):
     if os.path.exists(file_name):
         file = open(file_name,  "r")
-        for line in file:
+        data = datalines = (line.rstrip('\r\n') for line in file);
+        line_count = 1
+        for line in data:
             add_entry(line)
         file.close()
     else:
@@ -229,7 +233,6 @@ def split_set(input_set, attribute, continuous_descriminator, debug):
     set_array = []
     sets = {}
     if attribute == None:
-        print("Attribute none")
         return
 
     if attribute["type"] != 'Real':
@@ -286,7 +289,6 @@ def induceable(input_set, forbidden_attributes):
 
     if forbidden_attributes != None:
         if len(forbidden_attributes) == len(attributes):
-            print("Ran out of attributes to split on.")
             return False
 
     for attribute in attributes:
@@ -294,7 +296,6 @@ def induceable(input_set, forbidden_attributes):
         for entry in input_set:
             if entry[attribute["name"]] != attribute_value:
                 return True;
-
     return False
 
 # Populates a dictionary of the continuous values seen in the given input set,
@@ -322,12 +323,9 @@ def gain_continuous(input_set, attribute, attribute_values, forbidden_attribute_
     if attribute_values is None:
         print("Attribute values is NONE!")
         return (0, None)
-
     set_entropy = entropy_of_set(input_set)
-
     max_continuous_gain = -1
     max_continuous_descriminator = -1
-
     for x in range(0, len(attribute_values)-1):
         current_descriminator =(attribute_values[x] + attribute_values[x+1]) / 2
         if current_descriminator not in forbidden_attribute_reals[attribute["name"]]:
@@ -336,7 +334,6 @@ def gain_continuous(input_set, attribute, attribute_values, forbidden_attribute_
             if current_gain > max_continuous_gain:
                 max_continuous_gain = current_gain
                 max_continuous_descriminator = current_descriminator
-
     gain = (max_continuous_gain, max_continuous_descriminator)
     return gain
 
@@ -374,8 +371,9 @@ def induce(input_set, splits_performed, forbidden_attributes, forbidden_attribut
                     max_gain_attribute = attribute
                     continuous_descriminator = cont_gain[1]
 
+        if max_gain_attribute == None:
+            return
         children_sets = split_set(input_set, max_gain_attribute, continuous_descriminator, True)
-
         if (max_gain_attribute["type"] != "Real"):
             forbidden_attributes.append(max_gain_attribute["name"])
         else:
@@ -412,6 +410,7 @@ def induce(input_set, splits_performed, forbidden_attributes, forbidden_attribut
                     rules.append(rule)
             output_string += " THEN\n"
             output_string += "  CLASS IS " + input_set[0]["class"] + "\n\n"
+            print(output_string)
             output_file.write(output_string)
 
 # Helper function to determine whether a given entry has any missing values.
@@ -441,7 +440,6 @@ def classify(entry, using_rules, debug):
     applied_classes = []
     for rule in using_rules:
         passed_rule = True
-        part_counter = 0
         for part in rule["parts"]:
             if part[2] == "=":
                 if entry[part[0]] != part[1]:
@@ -454,12 +452,6 @@ def classify(entry, using_rules, debug):
                     passed_rule = False
         if passed_rule == True:
             applied_classes.append(rule["class"])
-        elif len(applied_classes) == 0 and part_counter == len(rule["parts"]) - 1:
-            pass
-            #print("Almost passed rule " + str(rule))
-
-    #if len(applied_classes) == 0:
-        #print("Could not classify " + str(entry))
 
     if flags["use_missing_data"]:
         return max_class(applied_classes)
@@ -470,16 +462,13 @@ def classify(entry, using_rules, debug):
 # Function that tests the rules in the rule array against
 # some training set
 
-def test_tree(testing_set, using_rules, debug):
+def test_tree(testing_set, using_rules):
     if len(testing_set) == 0:
        return
     correct_count = 0
     for entry in testing_set:
         if entry["class"] == classify(entry, using_rules, False):
             correct_count += 1
-        elif debug:
-            incorrect_sets[classify(entry, using_rules, False)].append(entry)
-
     return round(100 *(correct_count / len(testing_set)))
 
 def prune():
@@ -503,15 +492,18 @@ def prune():
 
     if test_tree(training_set, rules) - test_tree(training_set, augmented_rules) <= 5:
         rules = copy.deepcopy(augmented_rules)
+        print("Pruning was applied.")
 
 if __name__ == '__main__':
     parse_args()
     parse_spec_file(args.spec)
     parse_data_file(args.dat)
+
     partition_sets()
+
     induce(training_set, None, [], {})
     if flags["prune_tree"]:
         prune()
-    print("Classify on training => " + str(test_tree(training_set, rules, True)))
-    print("Classify on testing => " + str(test_tree(testing_set, rules, False)))
+    print("Classify on training\t=> " + str(test_tree(training_set, rules)) + "% accuracy")
+    print("Classify on testing\t=> " + str(test_tree(testing_set, rules)) + "% accuracy")
     output_file.close()

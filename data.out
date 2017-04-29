@@ -1,25 +1,25 @@
-IF (petal-length > 2.5999999999999996) AND (petal-width > 1.55) AND (petal-width > 1.75) AND (petal-length > 4.85) THEN
+IF (petal-length > 2.5999999999999996) AND (petal-length > 4.75) AND (petal-width > 1.75) AND (petal-length > 4.85) THEN
   CLASS IS Iris-virginica
 
-IF (petal-length > 2.5999999999999996) AND (petal-width > 1.55) AND (petal-width > 1.75) AND (petal-length < 4.85) AND (sepal-length > 5.95) THEN
+IF (petal-length > 2.5999999999999996) AND (petal-length > 4.75) AND (petal-width > 1.75) AND (petal-length < 4.85) AND (sepal-length > 5.95) THEN
   CLASS IS Iris-virginica
 
-IF (petal-length > 2.5999999999999996) AND (petal-width > 1.55) AND (petal-width > 1.75) AND (petal-length < 4.85) AND (sepal-length < 5.95) THEN
+IF (petal-length > 2.5999999999999996) AND (petal-length > 4.75) AND (petal-width > 1.75) AND (petal-length < 4.85) AND (sepal-length < 5.95) THEN
   CLASS IS Iris-versicolor
 
-IF (petal-length > 2.5999999999999996) AND (petal-width > 1.55) AND (petal-width < 1.75) AND (sepal-length > 5.45) AND (sepal-length > 6.95) THEN
-  CLASS IS Iris-virginica
-
-IF (petal-length > 2.5999999999999996) AND (petal-width > 1.55) AND (petal-width < 1.75) AND (sepal-length > 5.45) AND (sepal-length < 6.95) THEN
+IF (petal-length > 2.5999999999999996) AND (petal-length > 4.75) AND (petal-width < 1.75) AND (sepal-length > 6.5) THEN
   CLASS IS Iris-versicolor
 
-IF (petal-length > 2.5999999999999996) AND (petal-width > 1.55) AND (petal-width < 1.75) AND (sepal-length < 5.45) THEN
+IF (petal-length > 2.5999999999999996) AND (petal-length > 4.75) AND (petal-width < 1.75) AND (sepal-length < 6.5) AND (petal-length > 4.95) THEN
   CLASS IS Iris-virginica
 
-IF (petal-length > 2.5999999999999996) AND (petal-width < 1.55) AND (petal-length > 5.0) THEN
+IF (petal-length > 2.5999999999999996) AND (petal-length > 4.75) AND (petal-width < 1.75) AND (sepal-length < 6.5) AND (petal-length < 4.95) THEN
+  CLASS IS Iris-versicolor
+
+IF (petal-length > 2.5999999999999996) AND (petal-length < 4.75) AND (petal-width > 1.65) THEN
   CLASS IS Iris-virginica
 
-IF (petal-length > 2.5999999999999996) AND (petal-width < 1.55) AND (petal-length < 5.0) THEN
+IF (petal-length > 2.5999999999999996) AND (petal-length < 4.75) AND (petal-width < 1.65) THEN
   CLASS IS Iris-versicolor
 
 IF (petal-length < 2.5999999999999996) THEN
