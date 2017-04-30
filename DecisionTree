@@ -9,7 +9,6 @@
 #                                                             #
 ###############################################################
 
-
 import argparse
 import os.path
 import math
@@ -27,8 +26,10 @@ def main():
     induce(training_set, None, [], {})
     if flags["prune_tree"]:
         prune()
-    print("Classify on training\t=> " + str(test_tree(training_set, rules)) + "% accuracy")
-    print("Classify on testing\t=> " + str(test_tree(testing_set, rules)) + "% accuracy")
+    print("Classify on training\t=> " + str(test_tree(training_set, rules)) +
+          "% accuracy")
+    print("Classify on testing\t=> " + str(test_tree(testing_set, rules)) +
+          "% accuracy")
     output_file.close()
 
 
@@ -39,9 +40,11 @@ classes = []
 attributes = []
 
 # Dictionary of flags to modify behaviour
-flags = { 'use_continuous' : False,
-          'use_missing_data' : False,
-          'prune_tree' : False }
+flags = {
+    'use_continuous': False,
+    'use_missing_data': False,
+    'prune_tree': False
+}
 args = {}
 
 # Data structure to hold the training set in memory.
@@ -54,9 +57,10 @@ testing_set = []
 rules = []
 
 # Global file pointer to output rules to.
-output_file = open("data.out","w")
+output_file = open("data.out", "w")
 
 # Helper function to print an error message and exit the program.
+
 
 def fatalError(msg):
     print()
@@ -64,39 +68,54 @@ def fatalError(msg):
     print()
     os._exit(0)
 
+
 # Function that will extract an array from a string with items in
 # "{ item, item, item, ..., item  }"
 # format
 
+
 def extract_array(input):
-    input = input.replace('{','')
-    input = input.replace('}','')
-    array = list(map(lambda x : x.strip(), input.strip().split(",")))
+    input = input.replace('{', '')
+    input = input.replace('}', '')
+    array = list(map(lambda x: x.strip(), input.strip().split(",")))
     return array
+
 
 # Manages the parsing of command line arguments and populating the
 # correct flags as per those given arguments.
 
+
 def parse_args():
     global args
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", help="Use only discrete values.",
-                        action="store_true")
+    parser.add_argument(
+        "-d", help="Use only discrete values.", action="store_true")
 
-    parser.add_argument("-c", help="Use both continuous and discrete values.",
-                        action="store_true")
+    parser.add_argument(
+        "-c",
+        help="Use both continuous and discrete values.",
+        action="store_true")
 
-    parser.add_argument("-md", help="Use only discrete values, permit missing "
-                        + "information.", action="store_true")
+    parser.add_argument(
+        "-md",
+        help="Use only discrete values, permit missing " + "information.",
+        action="store_true")
 
-    parser.add_argument("-mc", help="Use continuous and discrete values, "
-                        + "permit missing information.", action="store_true")
+    parser.add_argument(
+        "-mc",
+        help="Use continuous and discrete values, " +
+        "permit missing information.",
+        action="store_true")
 
-    parser.add_argument("-pd", help="Use only discreet values, prune decision "
-                        + "tree.", action="store_true")
+    parser.add_argument(
+        "-pd",
+        help="Use only discreet values, prune decision " + "tree.",
+        action="store_true")
 
-    parser.add_argument("-pc", help="Use continuous and discrete values, prune"
-                        + " decision tree.", action="store_true")
+    parser.add_argument(
+        "-pc",
+        help="Use continuous and discrete values, prune" + " decision tree.",
+        action="store_true")
 
     parser.add_argument("spec")
     parser.add_argument("dat")
@@ -111,15 +130,18 @@ def parse_args():
     if args.pd or args.pc:
         flags['prune_tree'] = True
 
+
 # Populates attributes from the .spec file
+
 
 def parse_spec_file(file_name):
     global classes
     if os.path.exists(file_name):
-        file = open(file_name,  "r")
-        read_classname = False;
+        file = open(file_name, "r")
+        read_classname = False
         for line in file:
-            line_array = list(map(lambda x : x.strip(), line.strip().split(":")))
+            line_array = list(
+                map(lambda x: x.strip(), line.strip().split(":")))
             if not read_classname:
                 classes = line_array[1].split(" ")
                 read_classname = True
@@ -130,45 +152,55 @@ def parse_spec_file(file_name):
                     if flags['use_continuous']:
                         new_attrib["type"] = line_array[1]
                     else:
-                        fatalError("Continuous attribute found. Please run with a flag that permits continuous data.")
-                else :
+                        fatalError(
+                            "Continuous attribute found. Please run with a flag that permits continuous data."
+                        )
+                else:
                     new_attrib["type"] = extract_array(line_array[1])
                 attributes.append(new_attrib)
         file.close()
     else:
         fatalError("Specification file not found!")
 
+
 # Adds an entry to the training set from a line in the data file.
 # Checks for correct input, and converts to a real number where appropriate.
 
+
 def add_entry(line):
     line = line.strip()
-    line_array = list(map(lambda x : x.strip(), line.split(" ")))
+    line_array = list(map(lambda x: x.strip(), line.split(" ")))
     new_entry = {}
-    for x in range(0,len(attributes)):
+    for x in range(0, len(attributes)):
         if line_array[x] == '?':
             if flags['use_missing_data']:
-                new_entry[attributes[x]['name']] = None;
+                new_entry[attributes[x]['name']] = None
             else:
-                fatalError("Missing data encountered. Please run with a flag that permits missing data.")
+                fatalError(
+                    "Missing data encountered. Please run with a flag that permits missing data."
+                )
         elif attributes[x]["type"] == 'Real':
             new_entry[attributes[x]['name']] = float(line_array[x])
         else:
             new_entry[attributes[x]['name']] = line_array[x]
             if line_array[x] not in attributes[x]["type"]:
-                fatalError("Unexpected value \"" + line_array[x] + "\" for field " + attributes[x]['name']
-                           + " in data file. Expected " + str(attributes[x]['type']))
-    
+                fatalError("Unexpected value \"" + line_array[x] +
+                           "\" for field " + attributes[x]['name'] +
+                           " in data file. Expected " +
+                           str(attributes[x]['type']))
+
     new_entry['class'] = line_array[-1]
     training_set.append(new_entry)
     return
 
+
 # Iterates through the given data file, add entries per line.
+
 
 def parse_data_file(file_name):
     if os.path.exists(file_name):
-        file = open(file_name,  "r")
-        data = datalines = (line.rstrip('\r\n') for line in file);
+        file = open(file_name, "r")
+        data = datalines = (line.rstrip('\r\n') for line in file)
         line_count = 1
         for line in data:
             add_entry(line)
@@ -176,7 +208,9 @@ def parse_data_file(file_name):
     else:
         fatalError("Data file not found!")
 
+
 # Splits training set and testing set 70 / 30
+
 
 def partition_sets():
     global training_set
@@ -187,26 +221,34 @@ def partition_sets():
 
     random.shuffle(training_set)
     length = len(training_set)
-    testing_set = training_set[:int(0.3*length)]
-    training_set = training_set[int(0.3*length):]
+    testing_set = training_set[:int(0.3 * length)]
+    training_set = training_set[int(0.3 * length):]
+
 
 # Returns a subset of the input set, where all the entries have
 # the value `test_value` for attribute `test_attribute`
 
+
 def subset(input_set, test_attribute, test_value):
     new_set = []
     for entry in input_set:
-       if entry[test_attribute] == test_value:
-           new_set.append(entry)
+        if entry[test_attribute] == test_value:
+            new_set.append(entry)
     return new_set
+
 
 # Function to calculate the entropy of a set where there are `num_true`
 # amount of positive results in a global set of size `total`
 
+
 def entropy(num_true, total):
     if num_true == 0 or total == 0:
         return -0
-    return num_true/total * math.log(num_true/total,2)
+    return num_true / total * math.log(num_true / total, 2)
+
+
+# Function to calculate the entropy of some set with respect to
+# entry classifications.
 
 def entropy_of_set(input_set):
     if len(input_set) == 0:
@@ -219,8 +261,8 @@ def entropy_of_set(input_set):
         class_totals[entry_class] = 0
     for entry in input_set:
         for entry_class in classes:
-          if entry['class'] == entry_class:
-             class_totals[entry_class] += 1
+            if entry['class'] == entry_class:
+                class_totals[entry_class] += 1
 
     # calculate the net entropy by summing over the entropy of the classes
 
@@ -229,12 +271,19 @@ def entropy_of_set(input_set):
     entropy_total = abs(entropy_total)
     return entropy_total
 
+# Calculates the probability that a certain attribute has a missing value
+# in a given input set.
+
 def probability_of_missing(input_set, attribute):
     missing_count = 0
     for entry in input_set:
         if entry[attribute["name"]] == None:
-           missing_count += 1
+            missing_count += 1
     return missing_count / len(input_set)
+
+
+# Calculates the frequency that some `attribute` in the given
+# set `input_set` has a specific `value`
 
 def frequency(input_set, attribute, value):
     count = 0
@@ -243,24 +292,33 @@ def frequency(input_set, attribute, value):
             count += 1
     return count / len(input_set)
 
+
 # A summation of the entropies of each value valid for a certain
 # given attribute
+
 
 def average_entropy(input_set, attribute):
     total = 0
     for value in attribute["type"]:
-         total += frequency(input_set, attribute["name"], value) * entropy_of_set(subset(input_set, attribute["name"],value))
+        total += frequency(input_set, attribute["name"],
+                           value) * entropy_of_set(
+                               subset(input_set, attribute["name"], value))
     return total
+
 
 # Function that calculates the gain of partitioning a set
 # with criterion test.
 
+
 def gain(input_set, attribute):
-    return (1-probability_of_missing(input_set, attribute))*(entropy_of_set(input_set) - average_entropy(input_set, attribute))
+    return (1 - probability_of_missing(input_set, attribute)) * (
+        entropy_of_set(input_set) - average_entropy(input_set, attribute))
+
 
 # Splits an input set into subsets based on value
 
-def split_set(input_set, attribute, continuous_descriminator, debug):
+
+def split_set(input_set, attribute, continuous_descriminator):
     set_array = []
     sets = {}
     if attribute == None:
@@ -292,7 +350,10 @@ def split_set(input_set, attribute, continuous_descriminator, debug):
         set_array.append(less)
     return set_array
 
-# Generates rule components from splits described using string
+
+# Generates rule components from splits described using given splits
+# performed (described using strings).
+
 
 def parts_from_splits(splits):
     parts = []
@@ -303,13 +364,15 @@ def parts_from_splits(splits):
         elif " > " in entry:
             line_array = entry.split(" > ")
             parts.append((line_array[0], float(line_array[1]), ">"))
-        else :
+        else:
             line_array = entry.split(" = ")
             parts.append((line_array[0], line_array[1], "="))
     return parts
 
+
 # Retrieves the first non-missing element of an attriubte in a given
-# input set
+# input set.
+
 
 def attribute_value(input_set, attribute):
     for entry in input_set:
@@ -317,7 +380,9 @@ def attribute_value(input_set, attribute):
             return entry[attribute["name"]]
     return None
 
-# Function that checks whether a set has any difference other than classifications
+
+# Function that checks whether a set has any difference other than classifications.
+
 
 def induceable(input_set, forbidden_attributes):
     if len(input_set) == 0:
@@ -331,11 +396,13 @@ def induceable(input_set, forbidden_attributes):
         attribute_value = input_set[0][attribute["name"]]
         for entry in input_set:
             if entry[attribute["name"]] != attribute_value:
-                return True;
+                return True
     return False
+
 
 # Populates a dictionary of the continuous values seen in the given input set,
 # useful for calculating gain and splitting.
+
 
 def populate_cont_attribute_values(input_set):
     cont_attribute_values = {}
@@ -346,8 +413,10 @@ def populate_cont_attribute_values(input_set):
     for attribute in attributes:
         if attribute["type"] == "Real":
             for entry in input_set:
-                if entry[attribute["name"]] not in cont_attribute_values[attribute["name"]]:
-                    cont_attribute_values[attribute["name"]].append(entry[attribute["name"]])
+                if entry[attribute["name"]] not in cont_attribute_values[
+                        attribute["name"]]:
+                    cont_attribute_values[attribute["name"]].append(
+                        entry[attribute["name"]])
     # Sorting
 
     for key in cont_attribute_values.keys():
@@ -358,23 +427,30 @@ def populate_cont_attribute_values(input_set):
 # Calculates the gain for splitting on some continuous attribute, and returns that gain
 # and the continuous discriminator used.
 
-def gain_continuous(input_set, attribute, attribute_values, forbidden_attribute_reals):
-    gain = (0,0)
+
+def gain_continuous(input_set, attribute, attribute_values,
+                    forbidden_attribute_reals):
+    gain = (0, 0)
     if attribute_values is None:
         return (0, None)
     set_entropy = entropy_of_set(input_set)
     max_continuous_gain = -1
     max_continuous_descriminator = -1
-    for x in range(0, len(attribute_values)-1):
-        current_descriminator =(attribute_values[x] + attribute_values[x+1]) / 2
-        if current_descriminator not in forbidden_attribute_reals[attribute["name"]]:
-            sets = split_set(input_set, attribute, current_descriminator, False)
-            current_gain = set_entropy - (len(sets[0])/len(input_set) * entropy_of_set(sets[0]) + len(sets[1])/len(input_set) * entropy_of_set(sets[1]))
+    for x in range(0, len(attribute_values) - 1):
+        current_descriminator = (attribute_values[x] + attribute_values[x +
+                                                                        1]) / 2
+        if current_descriminator not in forbidden_attribute_reals[attribute[
+                "name"]]:
+            sets = split_set(input_set, attribute, current_descriminator)
+            current_gain = set_entropy - (
+                len(sets[0]) / len(input_set) * entropy_of_set(sets[0]) +
+                len(sets[1]) / len(input_set) * entropy_of_set(sets[1]))
             if current_gain > max_continuous_gain:
                 max_continuous_gain = current_gain
                 max_continuous_descriminator = current_descriminator
     gain = (max_continuous_gain, max_continuous_descriminator)
     return gain
+
 
 # Function that encapsulates the main logic of constructing the decision tree.
 
@@ -384,7 +460,9 @@ def gain_continuous(input_set, attribute, attribute_values, forbidden_attribute_
 # forbidden_attribute_reals - a set of continuous splits for particular attributes (cannot split on the same 
 #                              attribute, at the same place twice).
 
-def induce(input_set, splits_performed, forbidden_attributes, forbidden_attribute_reals):
+
+def induce(input_set, splits_performed, forbidden_attributes,
+           forbidden_attribute_reals):
     if len(input_set) == 0:
         return
     set_entropy = entropy_of_set(input_set)
@@ -392,9 +470,9 @@ def induce(input_set, splits_performed, forbidden_attributes, forbidden_attribut
         if not induceable(input_set, forbidden_attributes):
             return
 
-        continuous_attributes = populate_cont_attribute_values(input_set);
+        continuous_attributes = populate_cont_attribute_values(input_set)
         continuous_descriminator = None
-        cont_gain = (None,None)
+        cont_gain = (None, None)
         max_gain_attribute = None
         max_gain = -1
         forbidden_attributes = copy.deepcopy(forbidden_attributes)
@@ -405,8 +483,12 @@ def induce(input_set, splits_performed, forbidden_attributes, forbidden_attribut
                 else:
                     if attribute["name"] not in forbidden_attribute_reals:
                         forbidden_attribute_reals[attribute["name"]] = []
-                    if continuous_descriminator not in forbidden_attribute_reals[attribute["name"]]:
-                        cont_gain = gain_continuous(input_set, attribute, continuous_attributes[attribute["name"]], forbidden_attribute_reals)
+                    if continuous_descriminator not in forbidden_attribute_reals[
+                            attribute["name"]]:
+                        cont_gain = gain_continuous(
+                            input_set, attribute,
+                            continuous_attributes[attribute["name"]],
+                            forbidden_attribute_reals)
                         attribute_gain = cont_gain[0]
 
                 if attribute_gain > max_gain:
@@ -416,36 +498,46 @@ def induce(input_set, splits_performed, forbidden_attributes, forbidden_attribut
 
         if max_gain_attribute == None:
             return
-        children_sets = split_set(input_set, max_gain_attribute, continuous_descriminator, True)
+        children_sets = split_set(input_set, max_gain_attribute,
+                                  continuous_descriminator)
         if (max_gain_attribute["type"] != "Real"):
             forbidden_attributes.append(max_gain_attribute["name"])
         else:
             if forbidden_attribute_reals[max_gain_attribute["name"]] == None:
                 forbidden_attribute_reals[max_gain_attribute["name"]] = []
 
-            if continuous_descriminator not in forbidden_attribute_reals[max_gain_attribute["name"]]:
-                forbidden_attribute_reals[max_gain_attribute["name"]].append(continuous_descriminator)
+            if continuous_descriminator not in forbidden_attribute_reals[
+                    max_gain_attribute["name"]]:
+                forbidden_attribute_reals[max_gain_attribute["name"]].append(
+                    continuous_descriminator)
 
         for child in children_sets:
             if len(child) > 0:
                 child_splits_performed = [] if splits_performed == None else splits_performed[:]
                 if max_gain_attribute["type"] != "Real":
-                    child_splits_performed.append(max_gain_attribute["name"] + " = " + attribute_value(child,max_gain_attribute))
+                    child_splits_performed.append(
+                        max_gain_attribute["name"] + " = " + attribute_value(
+                            child, max_gain_attribute))
                 else:
-                    example_value = attribute_value(child,max_gain_attribute)
+                    example_value = attribute_value(child, max_gain_attribute)
                     if example_value < continuous_descriminator:
-                        child_splits_performed.append(max_gain_attribute["name"] + " < " + str(continuous_descriminator))
+                        child_splits_performed.append(
+                            max_gain_attribute["name"] + " < " +
+                            str(continuous_descriminator))
                     else:
-                        child_splits_performed.append(max_gain_attribute["name"] + " > " + str(continuous_descriminator))
+                        child_splits_performed.append(
+                            max_gain_attribute["name"] + " > " +
+                            str(continuous_descriminator))
 
-                induce(child,child_splits_performed, forbidden_attributes, forbidden_attribute_reals)
+                induce(child, child_splits_performed, forbidden_attributes,
+                       forbidden_attribute_reals)
     else:
         if splits_performed != None and len(splits_performed) > 0:
             output_string = "IF "
-            for x in range(0,len(splits_performed)):
+            for x in range(0, len(splits_performed)):
                 output_string += "(" + splits_performed[x] + ")"
                 if x < len(splits_performed) - 1:
-                   output_string += " AND "
+                    output_string += " AND "
                 rule = {}
                 rule["class"] = input_set[0]["class"]
                 rule["parts"] = parts_from_splits(splits_performed)
@@ -456,7 +548,9 @@ def induce(input_set, splits_performed, forbidden_attributes, forbidden_attribut
             print(output_string)
             output_file.write(output_string)
 
+
 # Helper function to determine whether a given entry has any missing values.
+
 
 def has_missing_data(entry):
     for key in entry.keys():
@@ -464,8 +558,10 @@ def has_missing_data(entry):
             return True
     return False
 
+
 # Given an array of classfications (`classes`), this function returns
 # the most commonly occuring class.
+
 
 def max_class(classes):
     if (len(classes) == 1):
@@ -481,6 +577,7 @@ def max_class(classes):
             h = each
     return h
 
+
 # Returns a classification for an entry, using some set of rules 
 # (rules are usually the global `rules`, but augmented rules are 
 # used to check the validity of pruning).
@@ -488,6 +585,7 @@ def max_class(classes):
 # For an entry with missing values, a collection of classifcations
 # is gathered, and then the maximal occuring classification is 
 # returned.
+
 
 def classify(entry, using_rules):
     entry_has_missing_data = has_missing_data(entry)
@@ -513,21 +611,24 @@ def classify(entry, using_rules):
         if len(applied_classes) > 0:
             return applied_classes[0]
 
+
 # Function that tests the rules in the rule array against
 # some training set
 
+
 def test_tree(testing_set, using_rules):
     if len(testing_set) == 0:
-       return
+        return
     correct_count = 0
     for entry in testing_set:
         if entry["class"] == classify(entry, using_rules):
             correct_count += 1
-    return round(100 *(correct_count / len(testing_set)))
+    return round(100 * (correct_count / len(testing_set)))
 
 
 # Function to perform pruning. Pruning is attempted on the most complex
 # rules in the `rules` data structure. 
+
 
 def prune():
     max_rule_length = -1
@@ -548,7 +649,8 @@ def prune():
     # if the accuracy loss is smaller than 5, apply changes to master copy of
     # the rules
 
-    if test_tree(training_set, rules) - test_tree(training_set, augmented_rules) <= 5:
+    if test_tree(training_set, rules) - test_tree(training_set,
+                                                  augmented_rules) <= 5:
         rules = copy.deepcopy(augmented_rules)
         print("Pruning was applied.")
 
